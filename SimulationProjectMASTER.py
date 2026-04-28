@@ -8,7 +8,9 @@ WIDTH, HEIGHT = 800,800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Gas Simulation")
 
-Number_of_Particles = 30
+Number_of_Particles = 500
+Max_speed = 0
+Particle_size = 5
 
 class Particle:
 
@@ -46,10 +48,30 @@ class Particle:
 
             impulse = (2 * rel_vel) / (self.mass + other.mass)
 
+            if rel_vel > 0:
+                return
+
             self.x_vel -= impulse * other.mass * Normal_x_vel
             self.y_vel -= impulse * other.mass * Normal_y_vel
             other.x_vel += impulse * self.mass * Normal_x_vel
             other.y_vel += impulse * self.mass * Normal_y_vel
+
+    def collide_wall(self):
+        if self.x + self.radius >= 400:
+            self.x = 400-self.radius
+            self.x_vel = self.x_vel*-1
+
+        if self.x - self.radius <= -400:
+            self.x = -400+self.radius
+            self.x_vel = self.x_vel*-1
+
+        if self.y + self.radius >= 400:
+            self.y = 400-self.radius
+            self.y_vel = self.y_vel*-1
+
+        if self.y - self.radius <= -400:
+            self.y = -400+self.radius
+            self.y_vel = self.y_vel*-1
     
     def update(self):
         self.x += self.x_vel
@@ -62,14 +84,19 @@ def main():
     run = True
     clock = pygame.time.Clock()
 
+    Particle_x = Particle(0,0,Particle_size,(0,225,0), 1.67*10**-24)
+    Particle_x.x_vel = 25
+
+    Particles.append(Particle_x)
+
     for i in range(Number_of_Particles):
-        x = random.uniform(-400,400)
-        y = random.uniform(-400,400)
+        x = random.uniform(-300,300)
+        y = random.uniform(-300,300)
 
-        Particle_i = Particle(random.uniform(-400,400),random.uniform(-400,400),10,(0,255,0), 1.67*10**-24)
+        Particle_i = Particle(random.uniform(-400,400),random.uniform(-400,400),Particle_size,(0,255,0), 1.67*10**-24)
 
-        Particle_i.x_vel = random.uniform(-1,1)
-        Particle_i.y_vel = random.uniform(-1,1)
+        Particle_i.x_vel = random.uniform(-Max_speed,Max_speed)
+        Particle_i.y_vel = random.uniform(-Max_speed,Max_speed)
 
         Particles.append(Particle_i)
         
@@ -94,12 +121,15 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        for particle in Particles:
-            for i in range(len(Particles)):
-                for j in range(i + 1, len(Particles)):
-                    Particles[i].collide(Particles[j])
+        for i in range(len(Particles)):
+            for j in range(i + 1, len(Particles)):
+                Particles[i].collide(Particles[j])
 
-            particle.update()#fisdfisajfio
+        for particle in Particles:
+
+            particle.collide_wall()
+            particle.colour = (75,75,35)
+            particle.update()
             particle.draw(WIN)
 
         pygame.display.update()
