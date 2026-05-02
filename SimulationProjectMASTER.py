@@ -8,9 +8,12 @@ WIDTH, HEIGHT = 800,800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Gas Simulation")
 
-Number_of_Particles = 500
+Number_of_Particles = 100
 Max_speed = 0
-Particle_size = 5
+Particle_size = 4
+Sigma = 0.1
+Epsilon = 0.0000000001
+dt = 0.0001
 
 class Particle:
 
@@ -38,23 +41,18 @@ class Particle:
 
         if distance <= self.radius + other.radius:
 
-            Normal_x_vel = dx/distance
-            Normal_y_vel = dy/distance
-
             dvx = self.x_vel - other.x_vel
             dvy = self.y_vel - other.y_vel
             
-            rel_vel = dvx * Normal_x_vel + dvy * Normal_y_vel
-
-            impulse = (2 * rel_vel) / (self.mass + other.mass)
+            rel_vel = dvx * dx + dvy * dy
 
             if rel_vel > 0:
                 return
 
-            self.x_vel -= impulse * other.mass * Normal_x_vel
-            self.y_vel -= impulse * other.mass * Normal_y_vel
-            other.x_vel += impulse * self.mass * Normal_x_vel
-            other.y_vel += impulse * self.mass * Normal_y_vel
+            self.x_vel -= (2*other.mass/(self.mass+other.mass))*(rel_vel/(distance**2))*dx
+            self.y_vel -= (2*other.mass/(self.mass+other.mass))*(rel_vel/(distance**2))*dy
+            other.x_vel += (2*self.mass/(self.mass+other.mass))*(rel_vel/(distance**2))*dx
+            other.y_vel += (2*self.mass/(self.mass+other.mass))*(rel_vel/(distance**2))*dy
 
     def collide_wall(self):
         if self.x + self.radius >= 400:
@@ -72,7 +70,26 @@ class Particle:
         if self.y - self.radius <= -400:
             self.y = -400+self.radius
             self.y_vel = self.y_vel*-1
-    
+
+    def Potential(self, other):
+        dx = self.x - other.x
+        dy = self.y - other.y
+        distance1 = max(math.sqrt(dx**2 + dy**2), 5)
+
+        F = 24*Epsilon*(2*(Sigma**12/distance1**13) - (Sigma**6/distance1**7))
+
+        Fx = F*dx
+        Fy = F*dy
+
+        if distance1 == 0:
+            return
+
+        self.x_vel += Fx/(self.mass)*dt
+        self.y_vel += Fy/(self.mass)*dt
+
+        other.x_vel -= Fx/(other.mass)*dt
+        other.y_vel -= Fy/(other.mass)*dt
+        
     def update(self):
         self.x += self.x_vel
         self.y += self.y_vel
@@ -84,8 +101,8 @@ def main():
     run = True
     clock = pygame.time.Clock()
 
-    Particle_x = Particle(0,0,Particle_size,(0,225,0), 1.67*10**-24)
-    Particle_x.x_vel = 25
+    Particle_x = Particle(0,0,Particle_size,(0,70,0), 1)
+    Particle_x.x_vel = 5
 
     Particles.append(Particle_x)
 
@@ -123,12 +140,13 @@ def main():
 
         for i in range(len(Particles)):
             for j in range(i + 1, len(Particles)):
-                Particles[i].collide(Particles[j])
+                #Particles[i].collide(Particles[j])
+                Particles[i].Potential(Particles[j])
 
         for particle in Particles:
 
             particle.collide_wall()
-            particle.colour = (75,75,35)
+            particle.colour = (0,150,35)
             particle.update()
             particle.draw(WIN)
 
