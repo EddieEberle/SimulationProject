@@ -8,10 +8,10 @@ WIDTH, HEIGHT = 800,800
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Gas Simulation")
 
-Ideal = False
+Ideal = True
 
-Number_of_Particles = 300
-T = 1.0  
+Number_of_Particles = 400
+T = 1
 Max_speed = math.sqrt(8 * T / (math.pi))
 Particle_size = 4
 Sigma = 1
